@@ -8,7 +8,7 @@ import (
 func Test(t *testing.T) {
 	err := errors.New("test")
 
-	Hook(err, func() bool {
+	Hook(err, func(err error) bool {
 		return true
 	})
 

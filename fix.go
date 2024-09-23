@@ -1,16 +1,34 @@
 package fix
 
-var errHandler = map[error][]func() bool{}
+import "errors"
+
+type errCB struct {
+	cb       func(err error) bool
+	matchAny bool
+}
+
+var errHandler = map[error][]errCB{}
 
 // Hook a callback to be called as a potential fix to an error.
 //
 // @cb: return true if the fix was successful,
 // return false, if it failed.
-func Hook(err error, cb func() bool) {
+func Hook(err error, cb func(err error) bool) {
 	if _, ok := errHandler[err]; !ok {
-		errHandler[err] = []func() bool{}
+		errHandler[err] = []errCB{}
 	}
-	errHandler[err] = append(errHandler[err], cb)
+	errHandler[err] = append(errHandler[err], errCB{cb: cb})
+}
+
+// HookAny is like Hook, but will use the error.Is method.
+//
+// @cb: return true if the fix was successful,
+// return false, if it failed.
+func HookAny(err error, cb func(err error) bool) {
+	if _, ok := errHandler[err]; !ok {
+		errHandler[err] = []errCB{}
+	}
+	errHandler[err] = append(errHandler[err], errCB{cb: cb, matchAny: true})
 }
 
 // Try to fix an error if a hook can fix it.
@@ -37,14 +55,31 @@ func Try(err *error, retry func(err error) error) {
 
 		// try error handlers
 		if handlers, ok := errHandler[*err]; ok {
-			for _, cb := range handlers {
-				if cb() { // if the handler did something (and its worth retrying)
+			for _, handler := range handlers {
+				if handler.cb(*err) { // if the handler did something (and its worth retrying)
 					e := retry(*err)
 					if e == nil || e != *err {
 						// if we get a different error, stop running the current handlers.
 						// we need to run different error handlers now.
 						*err = e
 						break
+					}
+				}
+			}
+		}
+
+		// try with errors.Is
+		for e, handlers := range errHandler {
+			if errors.Is(*err, e) {
+				for _, handler := range handlers {
+					if handler.matchAny && handler.cb(*err) { // if the handler did something (and its worth retrying)
+						e := retry(*err)
+						if e == nil || e != *err {
+							// if we get a different error, stop running the current handlers.
+							// we need to run different error handlers now.
+							*err = e
+							break
+						}
 					}
 				}
 			}
@@ -67,12 +102,29 @@ func TryOnce(err *error, retry func(err error) error) {
 
 	// try error handlers
 	if handlers, ok := errHandler[*err]; ok {
-		for _, cb := range handlers {
-			if cb() { // if the handler did something (and its worth retrying)
+		for _, handler := range handlers {
+			if handler.cb(*err) { // if the handler did something (and its worth retrying)
 				e := retry(*err)
 				if e == nil || e != *err {
 					*err = e
 					return
+				}
+			}
+		}
+	}
+
+	// try with errors.Is
+	for e, handlers := range errHandler {
+		if errors.Is(*err, e) {
+			for _, handler := range handlers {
+				if handler.matchAny && handler.cb(*err) { // if the handler did something (and its worth retrying)
+					e := retry(*err)
+					if e == nil || e != *err {
+						// if we get a different error, stop running the current handlers.
+						// we need to run different error handlers now.
+						*err = e
+						break
+					}
 				}
 			}
 		}
