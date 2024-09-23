@@ -23,13 +23,29 @@ func Try(err *error, retry func() error) {
 		return
 	}
 
-	if handlers, ok := errHandler[*err]; ok {
-		for _, cb := range handlers {
-			if cb() {
-				e := retry()
-				if e == nil || e != *err {
-					*err = e
-					return
+	// to prevent recursion
+	errTried := []error{}
+
+	for *err != nil {
+		// check for recursion
+		for _, e := range errTried {
+			if *err == e {
+				return
+			}
+		}
+		errTried = append(errTried, *err)
+
+		// try error handlers
+		if handlers, ok := errHandler[*err]; ok {
+			for _, cb := range handlers {
+				if cb() { // if the handler did something (and its worth retrying)
+					e := retry()
+					if e == nil || e != *err {
+						// if we get a different error, stop running the current handlers.
+						// we need to run different error handlers now.
+						*err = e
+						break
+					}
 				}
 			}
 		}
