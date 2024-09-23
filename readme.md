@@ -3,7 +3,7 @@
 A new way of error handling.
 
 Before throwing an error, you can first attempt to fix it,
-and let any other part of the program could do something about it.
+and let any other part of the program try and do something about it.
 This means if an error is caused by something externally,
 a module (for example) could automatically fix the error.
 
