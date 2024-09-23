@@ -52,13 +52,11 @@ func init(){
     // and the error has changed after running the retry callback (in fix.Try),
     // this method will be skipped.
 
-    // if we dont have "old data" in out cache, return false
-    if _, ok := Cache["old data"]; !ok {
+    if _, ok := Cache["old data"]; !ok { // if we dont have "old data" in out cache, return false
       return false // fix changed nothing (skip to next hook)
     }
 
-    // remove "old data" from cache
-    delete(Cache, "old data")
+    delete(Cache, "old data") // remove "old data" from cache
     return true // fix did something (run the retry callback in fix.Try)
   })
 }
