@@ -1,4 +1,4 @@
-# Fix Error Hook
+# Go Fix Error Hook
 
 A new way of error handling.
 
