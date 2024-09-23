@@ -51,3 +51,30 @@ func Try(err *error, retry func(err error) error) {
 		}
 	}
 }
+
+// TryOnce will try to fix only one error.
+//
+// If a different error comes up, this method will stop trying,
+// instead of trying to fix the next error.
+//
+// @err will be updated with the new error, or with nil if fixed successfully.
+//
+// note: if @err is already nil, this method will be ignored.
+func TryOnce(err *error, retry func(err error) error) {
+	if err == nil || *err == nil {
+		return
+	}
+
+	// try error handlers
+	if handlers, ok := errHandler[*err]; ok {
+		for _, cb := range handlers {
+			if cb() { // if the handler did something (and its worth retrying)
+				e := retry(*err)
+				if e == nil || e != *err {
+					*err = e
+					return
+				}
+			}
+		}
+	}
+}
