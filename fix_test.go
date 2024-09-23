@@ -12,7 +12,7 @@ func Test(t *testing.T) {
 		return true
 	})
 
-	Try(&err, func() error {
+	Try(&err, func(err error) error {
 		return nil
 	})
 
