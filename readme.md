@@ -48,8 +48,8 @@ var Cache = map[string]string{}
 func init(){
   fix.Hook(Error_OOM, func() bool {
     // this method will be called, when fix.Try is called.
-    // note: if a previous hook in the queue fixes the problem first,
-    // and the error has changed after running the retry callback,
+    // note: if a previous hook in the list fixes the problem first,
+    // and the error has changed after running the retry callback (in fix.Try),
     // this method will be skipped.
 
     // if we dont have "old data" in out cache, return false
