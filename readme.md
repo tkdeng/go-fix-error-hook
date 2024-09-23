@@ -27,6 +27,9 @@ func decompress(str string) (string, error) {
 
   // call before checking for nil error
   fix.Try(&err, func() error {
+    //note: this method will first run through the fix.Hook list,
+    // and clear the cache (as shown in the `fix.Hook` example).
+
     // retry stuff...
     str, err = "some large string", nil
 
